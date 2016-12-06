@@ -1,14 +1,7 @@
 (ns selenium-clojure.core
   (:require [environ.core :refer [env]]
-            [clj-webdriver.core :as cw]))
-
-
-(defn implicit-wait
-  "The clj-webdriver.core.implicit-wait function doesn't seem
-  to get loaded for some reason, so I've just pasted the code here."
-  [wd timeout]
-  (.implicitlyWait (.. (:webdriver wd) manage timeouts) timeout java.util.concurrent.TimeUnit/MILLISECONDS)
-  wd)
+            [clj-webdriver.core :as cw]
+            [clj-webdriver.wait :as wait]))
 
 
 (defn assert-and-click-closure
@@ -29,7 +22,7 @@
 
   ; open the browser 
   (def driver (cw/new-driver {:browser :chrome}))
-  (implicit-wait driver 5000)
+  (wait/implicit-wait driver 5000)
 
   (defn assert-and-click
     "Closure of above."
@@ -89,6 +82,7 @@
   (assert (cw/find-element driver {:css "#review-count"}))
   (def article-count-init (get-review-count))
   (println (str "Initial article count: " article-count-init))
+  (Thread/sleep 1500)
   
   ; review an article (interesting)
   (println (str "Reviewing entry PK: " (get-entry-pk)))
@@ -119,16 +113,22 @@
   
   ; skip an article
   (println (str "Reviewing entry PK: " (get-entry-pk)))
-  (assert-and-click "#review-buttons > div:nth-of-type(4)" "Skip this one")
+  (assert-and-click "#skip-article" "Skip this one")
   (Thread/sleep 1500)
   (def article-count-skipped (get-review-count))
   (println "Skipped an article.")
   (println (str "New article count: " article-count-skipped))
   (assert (= article-count-review-3 article-count-skipped))
 
-  
   ; go to Night Judge
   (assert (cw/find-element driver {:tag "input" :value "frances2" :checked "checked"}))
   (cw/click (cw/find-element driver {:tag "input" :value "night-judge"}))
+  
+  ; sometimes takes a while for the Beauhurst data to get sent over
+  (wait/wait-until driver (fn [& args] (boolean (cw/find-element driver {:css "#night-judge-logo > div > img"}))) 60000)
+  
+  (def nj-article-count-init (get-review-count))
+  (println (str "Night Judge article count: " nj-article-count-init))
+  (assert (cw/find-element driver {:css "#article-text > div span.highlighted"}))
   )
 

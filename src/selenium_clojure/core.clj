@@ -34,6 +34,20 @@
         value (cw/value input)]
     value))
 
+(defn review-article
+  ([button-text css last-count]
+    (review-article button-text css last-count identity))
+  ([button-text css last-count new-count-modifier]
+    (println (str "Reviewing entry PK: " (get-entry-pk)))
+    (assert-and-click css button-text)
+    (Thread/sleep 1500)
+    (let [new-count (get-review-count)]
+      (if (re-find #"[Ss]kip" button-text)
+        (println "Skipped an article.")
+        (println (str "Reviewed an article as " button-text ".")))
+      (println (str "New article count: " new-count))
+      (assert (= (new-count-modifier last-count) new-count))
+      new-count)))
 
 (defn -main
   "Go test my website!"
@@ -74,46 +88,26 @@
   ; go to Frances 2
   (cw/click (cw/find-element driver {:text "Frances 2"}))
 
-  ; (assert (cw/find-element driver {:css "#review-count"}))
-  ; (def article-count-init (get-review-count))
-  ; (println (str "Initial article count: " article-count-init))
-  ; (Thread/sleep 1500)
+  (assert (cw/find-element driver {:css "#review-count"}))
+  (def article-count (get-review-count))
+  (println (str "Initial article count: " article-count))
+  (Thread/sleep 1500)
   
-  ; ; review an article (interesting)
-  ; (println (str "Reviewing entry PK: " (get-entry-pk)))
-  ; (assert-and-click "#review-buttons > div:nth-of-type(1)" "Interesting")
-  ; (Thread/sleep 1500)
-  ; (def article-count-review-1 (get-review-count))
-  ; (println "Reviewed an article as interesting")
-  ; (println (str "New article count: " article-count-review-1))
-  ; (assert (= (dec article-count-init) article-count-review-1))
+  ; review an article (interesting)
+  (def article-count
+    (review-article "Interesting" "#review-buttons > div:nth-of-type(1)" article-count dec))
 
-  ; ; review an article (not interesting)
-  ; (println (str "Reviewing entry PK: " (get-entry-pk)))
-  ; (assert-and-click "#review-buttons > div:nth-of-type(2)" "Not interesting!")
-  ; (Thread/sleep 1500)
-  ; (def article-count-review-2 (get-review-count))
-  ; (println "Reviewed an article as not interesting")
-  ; (println (str "New article count: " article-count-review-2))
-  ; (assert (= (dec article-count-review-1) article-count-review-2))
+  ; review an article (not interesting)
+  (def article-count
+    (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
   
-  ; ; review an article (non-uk)
-  ; (println (str "Reviewing entry PK: " (get-entry-pk)))
-  ; (assert-and-click "#review-buttons > div:nth-of-type(3)" "Non-UK deal")
-  ; (Thread/sleep 1500)
-  ; (def article-count-review-3 (get-review-count))
-  ; (println "Reviewed an article as non-UK")
-  ; (println (str "New article count: " article-count-review-3))
-  ; (assert (= (dec article-count-review-2) article-count-review-3))
+  ; review an article (non-uk)
+  (def article-count
+    (review-article "Non-UK deal" "#review-buttons > div:nth-of-type(3)" article-count dec))
   
-  ; ; skip an article
-  ; (println (str "Reviewing entry PK: " (get-entry-pk)))
-  ; (assert-and-click "#skip-article" "Skip this one")
-  ; (Thread/sleep 1500)
-  ; (def article-count-skipped (get-review-count))
-  ; (println "Skipped an article.")
-  ; (println (str "New article count: " article-count-skipped))
-  ; (assert (= article-count-review-3 article-count-skipped))
+  ; skip an article
+  (def article-count
+    (review-article "Skip this one" "#skip-article" article-count))
 
 
   ; go to Night Judge
@@ -121,48 +115,79 @@
   (cw/click (cw/find-element driver {:tag "input" :value "night-judge"}))
   
   ; sometimes takes a while for the Beauhurst data to get sent over
-  (wait/wait-until driver (fn [& args] (boolean (cw/find-element driver {:css "#night-judge-logo > div > img"}))) 60000)
+  (wait/wait-until driver (fn [& args] (boolean (cw/find-element driver {:css "#night-judge-logo > div > img"}))) 120000)
   
-  (def nj-article-count-init (get-review-count))
-  (println (str "Night Judge article count: " nj-article-count-init))
+  (def article-count (get-review-count))
+  (println (str "Night Judge article count: " article-count))
   (assert (cw/find-element driver {:css "#article-text > div span.highlighted"}))
+  (assert (cw/find-element driver {:css "#night-judge-companies > div.well"}))
   (Thread/sleep 1500)
 
   ; review an article (relevant and interesting)
-  (println (str "Reviewing entry PK: " (get-entry-pk)))
-  (assert-and-click "#review-buttons > div:nth-of-type(1)" "Relevant and interesting!")
-  (Thread/sleep 1500)
-  (def nj-article-count-review-1 (get-review-count))
-  (println "Reviewed an article as relevant and interesting")
-  (println (str "New article count: " nj-article-count-review-1))
-  (assert (= (dec nj-article-count-init) nj-article-count-review-1))
+  (def article-count
+    (review-article "Relevant and interesting!" "#review-buttons > div:nth-of-type(1)" article-count dec))
 
   ; review an article (relevant, not interesting)
-  (println (str "Reviewing entry PK: " (get-entry-pk)))
-  (assert-and-click "#review-buttons > div:nth-of-type(2)" "Relevant but not interesting")
-  (Thread/sleep 1500)
-  (def nj-article-count-review-2 (get-review-count))
-  (println "Reviewed an article as relevant but not interesting")
-  (println (str "New article count: " nj-article-count-review-2))
-  (assert (= (dec nj-article-count-review-1) nj-article-count-review-2))
+  (def article-count
+    (review-article "Relevant but not interesting" "#review-buttons > div:nth-of-type(2)" article-count dec))
   
   ; review an article (not relevant)
-  (println (str "Reviewing entry PK: " (get-entry-pk)))
-  (assert-and-click "#review-buttons > div:nth-of-type(3)" "Not relevant!")
-  (Thread/sleep 1500)
-  (def nj-article-count-review-3 (get-review-count))
-  (println "Reviewed an article as not relevant")
-  (println (str "New article count: " nj-article-count-review-3))
-  (assert (= (dec nj-article-count-review-2) nj-article-count-review-3))
+  (def article-count
+    (review-article "Not relevant!" "#review-buttons > div:nth-of-type(3)" article-count dec))
   
   ; skip an article
-  (println (str "Reviewing entry PK: " (get-entry-pk)))
-  (assert-and-click "#skip-article" "Skip this one")
-  (Thread/sleep 1500)
-  (def nj-article-count-skipped (get-review-count))
-  (println "Skipped an article.")
-  (println (str "New article count: " nj-article-count-skipped))
-  (assert (= nj-article-count-review-3 nj-article-count-skipped))
+  (def article-count
+    (review-article "Skip this one" "#skip-article" article-count))
 
-  )
+  
+  ; go to Judge Frances
+  (cw/click (cw/find-element driver {:tag "input" :value "judge-frances"}))
+  (assert (or
+      (cw/find-element driver {:css "#night-judge-logo > div > img"})
+      (cw/find-element driver {:css "h4.frances-quote"})))
+  
+  (Thread/sleep 1500)
+  
+  (def article-count (get-review-count))
+  (println (str "Judge Frances article count: " article-count))
+  (Thread/sleep 1500)
+
+  (doseq [f2i (map inc (range 3))
+        nji (map inc (range 3))]
+    (let [frances-2 (boolean (cw/find-element driver {:css "h4.frances-quote"}))
+          night-judge (boolean (cw/find-element driver {:css "#night-judge-logo > div > img"}))]
+      (println (str "Frances 2 " frances-2))
+      (println (str "Night Judge " night-judge))
+      (cond
+        (and frances-2 night-judge)
+          (let [f2-button (cw/find-element driver {:css (str "#f2-radio > label:nth-of-type(" f2i ")")})
+                nj-button (cw/find-element driver {:css (str "#nj-radio > label:nth-of-type(" nji ")")})
+                review-button (cw/find-element driver {:css "#review-buttons > div.f2njreview"})
+                last-review-count article-count]
+            (cw/click f2-button)
+            (cw/click nj-button)
+            (cw/click review-button)
+            (Thread/sleep 1500)
+            (def article-count (get-review-count))
+            (println (str "New article count: " article-count))
+            (assert (= (dec last-review-count) article-count)))
+        frances-2
+          (let [button (cw/find-element driver {:css (str "#review-buttons > div:nth-of-type(" f2i ")")})
+                last-review-count article-count]
+            (cw/click button)
+            (Thread/sleep 1500)
+            (def article-count (get-review-count))
+            (println (str "New article count: " article-count))
+            (assert (= (dec last-review-count) article-count)))
+        night-judge
+          (let [button (cw/find-element driver {:css (str "#review-buttons > div:nth-of-type(" nji ")")})
+                last-review-count article-count]
+            (cw/click button)
+            (Thread/sleep 1500)
+            (def article-count (get-review-count))
+            (println (str "New article count: " article-count))
+            (assert (= (dec last-review-count) article-count))))))
+
+  ; quit
+  (cw/quit driver))
 

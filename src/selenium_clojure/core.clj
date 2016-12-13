@@ -53,6 +53,9 @@
   "Go test my website!"
   [& args]
 
+  ; wait a moment
+  (Thread/sleep 3000)
+
   ; go to the website
   (cw/to driver (env :url))
   (assert (re-find #"Engine Room" (cw/title driver)))
@@ -188,6 +191,58 @@
             (println (str "New article count: " article-count))
             (assert (= (dec last-review-count) article-count))))))
 
-  ; quit
-  (cw/quit driver))
+  ; go to Portfolio Checker
+  (cw/click (cw/find-element driver {:css "body > nav > div > ul:nth-child(2) > li:nth-of-type(1)"}))
+  (cw/click (cw/find-element driver {:text "Portfolios"}))
 
+  (def article-count (get-review-count))
+  (def article-count
+    (review-article "Interesting" "#review-buttons > div:nth-of-type(1)" article-count dec))
+  (def article-count
+    (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
+  (def article-count
+    (review-article "Skip this one" "#skip-article" article-count))
+
+  ; switch to equity portfolios
+  (cw/click (cw/find-element driver {:tag "input" :value "equity"}))
+
+  (Thread/sleep 500)
+  (def article-count (get-review-count))
+  (def article-count
+    (review-article "Interesting" "#review-buttons > div:nth-of-type(1)" article-count dec))
+  (def article-count
+    (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
+  (def article-count
+    (review-article "Skip this one" "#skip-article" article-count))
+  (assert (re-find #"Equity" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(3)"}))))
+
+  ; switch to grant portfolios
+  (cw/click (cw/find-element driver {:tag "input" :value "grant"}))
+
+  (Thread/sleep 500)
+  (def article-count (get-review-count))
+  (def article-count
+    (review-article "Interesting" "#review-buttons > div:nth-of-type(1)" article-count dec))
+  (def article-count
+    (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
+  (def article-count
+    (review-article "Skip this one" "#skip-article" article-count))
+  (assert (re-find #"Grant" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(3)"}))))
+
+  ; switch to accelerator portfolios
+  (cw/click (cw/find-element driver {:tag "input" :value "accelerator"}))
+
+  (Thread/sleep 500)
+  (def article-count (get-review-count))
+  (def article-count
+    (review-article "Interesting" "#review-buttons > div:nth-of-type(1)" article-count dec))
+  (def article-count
+    (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
+  (def article-count
+    (review-article "Skip this one" "#skip-article" article-count))
+  (assert (re-find #"Accelerator" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(3)"}))))
+
+  ; quit
+  (println "All the tests passed! Goodbye!")
+  (Thread/sleep 5000)
+  (cw/quit driver))

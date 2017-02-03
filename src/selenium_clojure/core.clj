@@ -40,7 +40,11 @@
   ([button-text css last-count new-count-modifier]
     (println (str "Reviewing entry PK: " (get-entry-pk)))
     (assert-and-click css button-text)
-    (Thread/sleep 1500)
+    (Thread/sleep 2000)
+    (when (= button-text "Relevant and interesting!")
+      (cw/switch-to-window driver (last (cw/windows driver)))
+      (cw/close driver))
+    (Thread/sleep 500)
     (let [new-count (get-review-count)]
       (if (re-find #"[Ss]kip" button-text)
         (println "Skipped an article.")
@@ -116,14 +120,11 @@
   ; go to Night Judge
   (assert (cw/find-element driver {:tag "input" :value "frances2" :checked "checked"}))
   (cw/click (cw/find-element driver {:tag "input" :value "night-judge"}))
-  
-  ; sometimes takes a while for the Beauhurst data to get sent over
-  (wait/wait-until driver (fn [& args] (boolean (cw/find-element driver {:css "#night-judge-logo > div > img"}))) 120000)
-  
+  (Thread/sleep 3000)
+
   (def article-count (get-review-count))
   (println (str "Night Judge article count: " article-count))
   (assert (cw/find-element driver {:css "#article-text > div span.highlighted"}))
-  (assert (cw/find-element driver {:css "#night-judge-companies > div.well"}))
   (Thread/sleep 1500)
 
   ; review an article (relevant and interesting)
@@ -156,7 +157,7 @@
   (Thread/sleep 1500)
 
   (doseq [f2i (map inc (range 3))
-        nji (map inc (range 3))]
+          nji (map inc (range 3))]
     (let [frances-2 (boolean (cw/find-element driver {:css "h4.frances-quote"}))
           night-judge (boolean (cw/find-element driver {:css "#night-judge-logo > div > img"}))]
       (println (str "Frances 2 " frances-2))
@@ -171,6 +172,10 @@
             (cw/click nj-button)
             (cw/click review-button)
             (Thread/sleep 1500)
+            (when (= nji 1)
+              (cw/switch-to-window driver (last (cw/windows driver)))
+              (cw/close driver))
+            (Thread/sleep 500)
             (def article-count (get-review-count))
             (println (str "New article count: " article-count))
             (assert (= (dec last-review-count) article-count)))
@@ -187,6 +192,10 @@
                 last-review-count article-count]
             (cw/click button)
             (Thread/sleep 1500)
+            (when (= nji 1)
+              (cw/switch-to-window driver (last (cw/windows driver)))
+              (cw/close driver))
+            (Thread/sleep 500)
             (def article-count (get-review-count))
             (println (str "New article count: " article-count))
             (assert (= (dec last-review-count) article-count))))))
@@ -214,7 +223,7 @@
     (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
   (def article-count
     (review-article "Skip this one" "#skip-article" article-count))
-  (assert (re-find #"Equity" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(3)"}))))
+  (assert (re-find #"Equity" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(4)"}))))
 
   ; switch to grant portfolios
   (cw/click (cw/find-element driver {:tag "input" :value "grant"}))
@@ -227,7 +236,7 @@
     (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
   (def article-count
     (review-article "Skip this one" "#skip-article" article-count))
-  (assert (re-find #"Grant" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(3)"}))))
+  (assert (re-find #"Grant" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(4)"}))))
 
   ; switch to accelerator portfolios
   (cw/click (cw/find-element driver {:tag "input" :value "accelerator"}))
@@ -240,7 +249,7 @@
     (review-article "Not interesting!" "#review-buttons > div:nth-of-type(2)" article-count dec))
   (def article-count
     (review-article "Skip this one" "#skip-article" article-count))
-  (assert (re-find #"Accelerator" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(3)"}))))
+  (assert (re-find #"Accelerator" (cw/text (cw/find-element driver {:css "#article-text > div:nth-of-type(4)"}))))
 
   ; quit
   (println "All the tests passed! Goodbye!")
